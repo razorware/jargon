@@ -164,13 +164,13 @@ class ParserTests(unittest.TestCase):
         nodes = p.build_nodes(raw_nodes)
 
         self.assertIsNotNone(nodes)
-        self.assertTrue(isinstance(nodes, dict))
+        self.assertTrue(isinstance(nodes, list))
 
         window = None
 
-        for key, value in nodes.items():
-            if key.name == 'Window':
-                window = key
+        for kn in nodes:
+            if kn[0] == 'Window':
+                window = kn[1]
 
         self.assertIsNotNone(window)
         self.assertTrue(window.value is None)

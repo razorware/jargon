@@ -31,7 +31,7 @@ def load(file):
     '''
     key_nodes = p.build_nodes(raw_nodes)
 
-    return {}
+    return key_nodes
 
 
 class FileMap:
@@ -96,7 +96,7 @@ class Parser:
         """
         buffer = self.__fso.buffer
 
-        key_nodes = {}
+        key_nodes = []
         for n in raw_nodes:
             kn = KeyNode(n.name, n.parent)
 
@@ -109,13 +109,14 @@ class Parser:
                 idx = n.start
                 value = bytearray()
 
-                while buffer[idx] not in CRLF:
+                while buffer[idx] not in CRLF and buffer[idx] != CLOSE:
                     value.append(buffer[idx])
                     idx += 1
 
-                kn.set_value(value.decode())
+                if len(value) > 0:
+                    kn.set_value(value.decode())
 
-            key_nodes.update({kn: kn.value})
+            key_nodes.append((kn.name, kn))
 
         return key_nodes
 
