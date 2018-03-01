@@ -42,7 +42,7 @@ class KeyNode:
         if not self.__value:
             self.__value = []
 
-        self.__value.append((node.name, node.value))
+        self.__value.append((node.name, node))
 
     def set_value(self, value):
         if not self.__value:

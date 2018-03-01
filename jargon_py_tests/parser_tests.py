@@ -11,6 +11,13 @@ def parse_jargon_file(file):
     return p, p.parse(fmap.fso)
 
 
+def get_nodes(collection, key):
+    results = filter(lambda k: k[0] == key, collection)
+
+    for n in results:
+        yield n[1]
+
+
 class ParserTests(unittest.TestCase):
 
     def test_construction(self):
@@ -166,11 +173,7 @@ class ParserTests(unittest.TestCase):
         self.assertIsNotNone(nodes)
         self.assertTrue(isinstance(nodes, list))
 
-        window = None
-
-        for kn in nodes:
-            if kn[0] == 'Window':
-                window = kn[1]
+        window = list(get_nodes(nodes, 'Window'))[0]
 
         self.assertIsNotNone(window)
         self.assertTrue(window.value is None)
@@ -179,17 +182,8 @@ class ParserTests(unittest.TestCase):
         p, raw_nodes = parse_jargon_file("jargon_6.jss")
         nodes = p.build_nodes(raw_nodes)
 
-        window = None
-        for key in nodes.keys():
-            if key.name == 'Window':
-                window = key
-
-        self.assertIsNotNone(window.value)
-
-        target = None
-        for key in window.value.keys():
-            if key.name == 'target':
-                target = key
+        window = list(get_nodes(nodes, 'Window'))[0]
+        target = list(get_nodes(window.value, 'target'))[0]
 
         self.assertEqual('sample.Sample', target.value)
 

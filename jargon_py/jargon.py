@@ -103,7 +103,7 @@ class Parser:
             if n.nodes:
                 children = self.build_nodes(n.nodes)
                 for ch in children:
-                    kn.add_node(ch)
+                    kn.add_node(ch[1])
             else:
                 # no child nodes but value instead
                 idx = n.start
