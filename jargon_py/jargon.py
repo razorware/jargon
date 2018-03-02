@@ -1,16 +1,19 @@
 from os import path
 
-from nodes import *
+from jargon_py.nodes import *
 
+TAB = 9         # '\t'
+LF = 10         # '\n'
+EOL = 13        # '\r'
+SPACE = 32      # ' '
+DBL_QUOTE = 34  # '"'
+SGL_QUOTE = 39  # '\''
+ASTERISK = 42   # '*'
+FWD_SLASH = 47  # '/'
+TAG_DELIM = 58  # ':'
+ESCAPE = 92     # '\\'
 OPEN = 123      # '{'
 CLOSE = 125     # '}'
-SPACE = 32      # ' '
-EOL = 13        # '\r'
-LF = 10         # '\n'
-TAB = 9         # '\t'
-FWD_SLASH = 47  # '/'
-ASTERISK = 42   # '*'
-TAG_DELIM = 58  # ':'
 
 WHITESPACE = [SPACE, TAB, EOL, LF]
 CRLF = [EOL, LF]
@@ -95,6 +98,7 @@ class Parser:
         :return: dict
         """
         buffer = self.__fso.buffer
+        length = len(buffer)
 
         key_nodes = []
         for n in raw_nodes:
@@ -109,12 +113,30 @@ class Parser:
                 idx = n.start
                 value = bytearray()
 
-                while buffer[idx] not in CRLF and buffer[idx] != CLOSE:
+                # reads the entirety of line
+                while buffer[idx] not in CRLF and buffer[idx] != CLOSE and idx < length:
+                    # '"' will cause everything to read
+                    if buffer[idx] == DBL_QUOTE:
+                        idx += 1
+
+                        if buffer[idx] in CRLF:
+                            continue
+
+                        while buffer[idx] != DBL_QUOTE:
+                            # skip '\'
+                            if buffer[idx] == ESCAPE:
+                                idx += 1
+
+                            value.append(buffer[idx])
+                            idx += 1
+
+                        continue
+
                     value.append(buffer[idx])
                     idx += 1
 
                 if len(value) > 0:
-                    kn.set_value(value.decode())
+                    kn.set_value(self.__build_value(value.decode()))
 
             key_nodes.append((kn.name, kn))
 
@@ -236,17 +258,29 @@ class Parser:
 
     def __length_to_balance(self, bal_index, start, begin, end):
         buffer = self.__fso.buffer
-        bal_oc = bal_index
+        bal_be = bal_index
         idx = start
 
-        while bal_oc != 0 and idx < len(buffer):
+        while bal_be != 0 and idx < len(buffer):
             idx = self.__ignore_comments(idx)
 
             if buffer[idx] == begin:
-                bal_oc += 1
+                bal_be += 1
             elif buffer[idx] == end:
-                bal_oc -= 1
+                bal_be -= 1
 
             idx += 1
 
         return idx - start
+
+    @staticmethod
+    def __build_value(value):
+        """
+
+        :param value:
+        :type value: str
+
+        :return:
+        """
+        if value.startswith('"'):
+            pass

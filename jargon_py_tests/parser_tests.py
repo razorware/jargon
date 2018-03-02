@@ -1,14 +1,14 @@
 import unittest
 
-from jargon_test_harness import *
+from jargon_py_tests.jargon_test_harness import *
 
 
 def parse_jargon_file(file):
-    fmap = FileMap(root_path)
-    fmap.load(file)
+    file_map = FileMap(root_path)
+    file_map.load(file)
     p = Parser()
 
-    return p, p.parse(fmap.fso)
+    return p, p.parse(file_map.fso)
 
 
 def get_nodes(collection, key):
@@ -34,9 +34,9 @@ class ParserTests(unittest.TestCase):
                 .nodes = None
         :return:
         """
-        fmap = FileMap(root_path)
-        fmap.load("jargon_0.jss")
-        nodes = Parser().parse(fmap.fso)
+        file_map = FileMap(root_path)
+        file_map.load("jargon_0.jss")
+        nodes = Parser().parse(file_map.fso)
 
         self.assertTrue(len(nodes) == 1)
 
@@ -48,9 +48,9 @@ class ParserTests(unittest.TestCase):
     def test_crlf(self):
         starts = [8, 19, 31, 43, 59]
 
-        fmap = FileMap(root_path)
-        fmap.load("jargon_1.jss")
-        nodes = Parser().parse(fmap.fso)
+        file_map = FileMap(root_path)
+        file_map.load("jargon_1.jss")
+        nodes = Parser().parse(file_map.fso)
 
         self.assertEqual(len(starts), len(nodes))
 
@@ -70,9 +70,9 @@ class ParserTests(unittest.TestCase):
             idx += 1
 
     def test_ignore_single_line_comments(self):
-        fmap = FileMap(root_path)
-        fmap.load("jargon_2.jss")
-        nodes = Parser().parse(fmap.fso)
+        file_map = FileMap(root_path)
+        file_map.load("jargon_2.jss")
+        nodes = Parser().parse(file_map.fso)
 
         self.assertTrue(len(nodes) == 1)
 
@@ -82,9 +82,9 @@ class ParserTests(unittest.TestCase):
         self.assertTrue(key_node.nodes is None)
 
     def test_ignore_multi_line_comments(self):
-        fmap = FileMap(root_path)
-        fmap.load("jargon_3.jss")
-        nodes = Parser().parse(fmap.fso)
+        file_map = FileMap(root_path)
+        file_map.load("jargon_3.jss")
+        nodes = Parser().parse(file_map.fso)
 
         self.assertTrue(len(nodes) == 1)
 
@@ -97,9 +97,9 @@ class ParserTests(unittest.TestCase):
         names = ['Window', 'Window', 'Resources']
         starts = [44, 107, 195]
 
-        fmap = FileMap(root_path)
-        fmap.load("jargon_4.jss")
-        nodes = Parser().parse(fmap.fso)
+        file_map = FileMap(root_path)
+        file_map.load("jargon_4.jss")
+        nodes = Parser().parse(file_map.fso)
 
         self.assertEqual(len(starts), len(nodes))
 
@@ -120,9 +120,9 @@ class ParserTests(unittest.TestCase):
             idx += 1
 
     def test_empty_nested_node(self):
-        fmap = FileMap(root_path)
-        fmap.load("jargon_5.jss")
-        nodes = Parser().parse(fmap.fso)
+        file_map = FileMap(root_path)
+        file_map.load("jargon_5.jss")
+        nodes = Parser().parse(file_map.fso)
 
         parent = nodes[0]
 
@@ -138,9 +138,9 @@ class ParserTests(unittest.TestCase):
         expected_name = "target"
         expected_start = 81
 
-        fmap = FileMap(root_path)
-        fmap.load("jargon_6.jss")
-        nodes = Parser().parse(fmap.fso)
+        file_map = FileMap(root_path)
+        file_map.load("jargon_6.jss")
+        nodes = Parser().parse(file_map.fso)
         parent = nodes[0]
 
         actual_child = parent.nodes[0]
@@ -152,9 +152,9 @@ class ParserTests(unittest.TestCase):
         expected_names = ["target", "size"]
         expected_starts = [120, 145]
 
-        fmap = FileMap(root_path)
-        fmap.load("jargon_7.jss")
-        nodes = Parser().parse(fmap.fso)
+        file_map = FileMap(root_path)
+        file_map.load("jargon_7.jss")
+        nodes = Parser().parse(file_map.fso)
         parent = nodes[0]
 
         self.assertEqual(2, len(parent.nodes))
@@ -186,6 +186,18 @@ class ParserTests(unittest.TestCase):
         target = list(get_nodes(window.value, 'target'))[0]
 
         self.assertEqual('sample.Sample', target.value)
+
+    def test_build_node_with_string_value(self):
+        p, raw_nodes = parse_jargon_file("jargon_7.jss")
+        nodes = p.build_nodes(raw_nodes)
+
+        window = list(get_nodes(nodes, 'Window'))[0]
+
+        self.assertEqual(3, len(window.value))
+
+        title = list(get_nodes(window.value, 'title'))[0]
+
+        self.assertEqual("Memo: \"Lorem Ipsum\"", title.value)
 
 if __name__ == '__main__':
     unittest.main()

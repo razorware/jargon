@@ -1,24 +1,24 @@
 import unittest
 
-from jargon_test_harness import *
+from jargon_py_tests.jargon_test_harness import *
 
 
 class FileMapTests(unittest.TestCase):
 
     def test_construct(self):
-        fmap = FileMap(root_path)
+        file_map = FileMap(root_path)
         expected = path.abspath(root_path)
 
-        self.assertEqual(expected, fmap.root)
+        self.assertEqual(expected, file_map.root)
 
     def test_fmap_load(self):
-        fmap = FileMap(root_path)
-        fmap.load("jargon_1.jss")
-        fso = fmap.fso
+        file_map = FileMap(root_path)
+        file_map.load("jargon_1.jss")
+        file_obj = file_map.fso
 
         expected = path.join(path.abspath(root_path), "jargon_1.jss")
 
-        self.assertEqual(expected, fso.file)
+        self.assertEqual(expected, file_obj.file)
 
 if __name__ == '__main__':
     unittest.main()
