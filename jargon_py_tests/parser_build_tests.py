@@ -11,11 +11,28 @@ def parse_jargon_file(file):
     return p, p.parse(file_map.fso)
 
 
-def get_nodes(collection, key):
+def get_key_nodes(collection, key):
     results = filter(lambda k: k[0] == key, collection)
 
+    for k, n in results:
+        yield n
+
+
+def get_raw_nodes(collection, key):
+    results = filter(lambda r: r.name == key, collection)
+
     for n in results:
-        yield n[1]
+        yield n
+
+
+def first(iterator):
+    item = None
+
+    for i in iterator:
+        item = i
+        break
+
+    return item
 
 
 class ParserTests(unittest.TestCase):
@@ -46,7 +63,7 @@ class ParserTests(unittest.TestCase):
         self.assertTrue(key_node.nodes is None)
 
     def test_crlf(self):
-        starts = [8, 19, 31, 43, 59]
+        starts = [8, 19, 31, 43, 59, 72]
 
         file_map = FileMap(root_path)
         file_map.load("jargon_1.jss")
@@ -136,7 +153,7 @@ class ParserTests(unittest.TestCase):
 
     def test_populated_node(self):
         expected_name = "target"
-        expected_start = 81
+        expected_start = 19
 
         file_map = FileMap(root_path)
         file_map.load("jargon_6.jss")
@@ -150,7 +167,7 @@ class ParserTests(unittest.TestCase):
 
     def test_populated_multi_node(self):
         expected_names = ["target", "size"]
-        expected_starts = [120, 145]
+        expected_starts = [19, 44]
 
         file_map = FileMap(root_path)
         file_map.load("jargon_7.jss")
@@ -166,6 +183,20 @@ class ParserTests(unittest.TestCase):
 
             i += 1
 
+    def test_node_with_simple_string(self):
+        exp_names = ['target', 'title']
+
+        p, raw_nodes = parse_jargon_file("jargon_8.jss")
+        window = first(get_raw_nodes(raw_nodes, 'Window'))
+
+        self.assertTrue(2, len(window.nodes))
+
+        i = 0
+        for n in window.nodes:
+            self.assertEqual(exp_names[i], n.name)
+            self.assertIsNotNone(n.start)
+            i += 1
+
     def test_build_empty_node(self):
         p, raw_nodes = parse_jargon_file("jargon_0.jss")
         nodes = p.build_nodes(raw_nodes)
@@ -173,7 +204,7 @@ class ParserTests(unittest.TestCase):
         self.assertIsNotNone(nodes)
         self.assertTrue(isinstance(nodes, list))
 
-        window = list(get_nodes(nodes, 'Window'))[0]
+        window = first(get_key_nodes(nodes, 'Window'))
 
         self.assertIsNotNone(window)
         self.assertTrue(window.value is None)
@@ -182,22 +213,42 @@ class ParserTests(unittest.TestCase):
         p, raw_nodes = parse_jargon_file("jargon_6.jss")
         nodes = p.build_nodes(raw_nodes)
 
-        window = list(get_nodes(nodes, 'Window'))[0]
-        target = list(get_nodes(window.value, 'target'))[0]
+        window = first(get_key_nodes(nodes, 'Window'))
+        target = first(get_key_nodes(window.value, 'target'))
 
         self.assertEqual('sample.Sample', target.value)
 
-    def test_build_node_with_string_value(self):
-        p, raw_nodes = parse_jargon_file("jargon_7.jss")
+    def test_build_node_with_escaped_string_value(self):
+        p, raw_nodes = parse_jargon_file("jargon_8.jss")
         nodes = p.build_nodes(raw_nodes)
 
-        window = list(get_nodes(nodes, 'Window'))[0]
+        window = first(get_key_nodes(nodes, 'Window'))
 
-        self.assertEqual(3, len(window.value))
+        self.assertEqual(2, len(window.value))
 
-        title = list(get_nodes(window.value, 'title'))[0]
+        title = first(get_key_nodes(window.value, 'title'))
 
         self.assertEqual("Memo: \"Lorem Ipsum\"", title.value)
+
+    def test_build_node_with_multi_line_string_value(self):
+        exp_text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam a molestie ante. " \
+                   "...Praesent sed sollicitudin enim, commodo interdum massa.\r\n" \
+                   "Phasellus ullamcorper dolor in elit ultrices placerat. " \
+                   "Etiam commodo mauris ut urna facucibus sagittis."
+
+        p, raw_nodes = parse_jargon_file("jargon_9.jss")
+        nodes = p.build_nodes(raw_nodes)
+
+        window = first(get_key_nodes(nodes, 'Window'))
+        memo = first(get_key_nodes(window.value, 'memo'))
+
+        i = 0
+        while i < len(exp_text):
+            self.assertEqual(exp_text[i],
+                             memo.value[i],
+                             i)
+
+            i += 1
 
 if __name__ == '__main__':
     unittest.main()

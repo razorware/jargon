@@ -11,6 +11,7 @@ SGL_QUOTE = 39  # '\''
 ASTERISK = 42   # '*'
 FWD_SLASH = 47  # '/'
 TAG_DELIM = 58  # ':'
+LINE_TERM = 59  # ';'
 ESCAPE = 92     # '\\'
 OPEN = 123      # '{'
 CLOSE = 125     # '}'
@@ -173,7 +174,6 @@ class Parser:
                 key.append(buffer[idx])
                 idx += 1
 
-            # can check to see if start location is valid
             if len(key) > 0:
                 start = -1
                 raw_node = RawNode(key.decode())
@@ -188,7 +188,21 @@ class Parser:
                 start = idx
                 # read the node content
                 while buffer[idx] not in CRLF:
+                    # if quoted content:
+                    #   - skip escaped characters (\", \r, \n, \t, etc)
+                    #   - skip CRLF
+                    if buffer[idx] == DBL_QUOTE:
+                        idx += 1
+
+                        while buffer[idx] != DBL_QUOTE:
+                            # skip '\'
+                            if buffer[idx] == ESCAPE:
+                                idx += 1
+
+                            idx += 1
+
                     idx += 1
+
                 # complete to line feed
                 while buffer[idx] in CRLF:
                     idx += 1
@@ -284,3 +298,5 @@ class Parser:
         """
         if value.startswith('"'):
             pass
+
+        return value
