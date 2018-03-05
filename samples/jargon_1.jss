@@ -7,3 +7,5 @@ Window {
 }
 Window
 {}
+
+Window{}

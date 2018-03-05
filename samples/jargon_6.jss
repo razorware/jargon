@@ -1,4 +1,3 @@
 Window{
-  //  named value
-  target: sample.Sample
+  target: sample.Sample;
 }
