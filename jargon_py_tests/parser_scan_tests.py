@@ -31,7 +31,7 @@ class ParserScanTests(unittest.TestCase):
         self.assertTrue(key_node.nodes is None)
 
     def test_crlf(self):
-        starts = [8, 19, 31, 43, 59, 72]
+        starts = [8, 19, 31, 43, 59, 71]
 
         file_map = FileMap(root_path)
         file_map.load("jargon_1.jss")

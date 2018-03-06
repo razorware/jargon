@@ -1,16 +1,16 @@
-TAB = 9         # '\t'
-LF = 10         # '\n'
-EOL = 13        # '\r'
-SPACE = 32      # ' '
-DBL_QUOTE = 34  # '"'
-SGL_QUOTE = 39  # '\''
-ASTERISK = 42   # '*'
-FWD_SLASH = 47  # '/'
-TAG_DELIM = 58  # ':'
-LINE_TERM = 59  # ';'
-ESCAPE = 92     # '\\'
-OPEN = 123      # '{'
-CLOSE = 125     # '}'
+TAB = 9             # '\t'
+LF = 10             # '\n'
+EOL = 13            # '\r'
+SPACE = 32          # ' '
+DBL_QUOTE = 34      # '"'
+SGL_QUOTE = 39      # '\''
+ASTERISK = 42       # '*'
+FWD_SLASH = 47      # '/'
+TAG_DELIM = 58      # ':'
+LINE_TERM = 59      # ';'
+ESCAPE = 92         # '\\'
+OPEN_BLOCK = 123    # '{'
+CLOSE_BLOCK = 125   # '}'
 
 WHITESPACE = bytes([SPACE, TAB, EOL, LF])
 CR_LF = bytes([EOL, LF])
@@ -31,7 +31,12 @@ def get_tag(buffer, idx):
     tag = bytearray()
     length = len(buffer)
 
-    while idx < length and buffer[idx] != TAG_DELIM:
+    while idx < length and \
+            (buffer[idx] != TAG_DELIM and buffer[idx] != OPEN_BLOCK):
+        if is_whitespace(buffer[idx]):
+            idx += 1
+            continue
+
         tag.append(buffer[idx])
         idx += 1
 

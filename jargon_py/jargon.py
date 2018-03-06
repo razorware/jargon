@@ -96,7 +96,7 @@ class Parser:
                 value = bytearray()
 
                 # reads the entirety of line
-                while buffer[idx] not in CR_LF and buffer[idx] != CLOSE and idx < length:
+                while buffer[idx] not in CR_LF and buffer[idx] != CLOSE_BLOCK and idx < length:
                     # '"' will cause everything to read
                     if buffer[idx] == DBL_QUOTE:
                         idx += 1
@@ -138,7 +138,17 @@ class Parser:
             idx = self.__ignore_comments(idx)
             tag, idx = get_tag(buffer, idx)
 
-            nodes.append((tag, None))
+            start = idx
+            if buffer[idx] == OPEN_BLOCK:
+                idx += 1
+                start = idx
+
+                while buffer[idx] != CLOSE_BLOCK:
+                    idx += 1
+
+            nodes.append(RawNode(tag.decode(), start=start))
+
+            idx += 1
 
         return nodes
 
