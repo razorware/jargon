@@ -1,26 +1,7 @@
 from os import path
 
+from jargon_py import *
 from jargon_py.nodes import *
-
-TAB = 9         # '\t'
-LF = 10         # '\n'
-EOL = 13        # '\r'
-SPACE = 32      # ' '
-DBL_QUOTE = 34  # '"'
-SGL_QUOTE = 39  # '\''
-ASTERISK = 42   # '*'
-FWD_SLASH = 47  # '/'
-TAG_DELIM = 58  # ':'
-LINE_TERM = 59  # ';'
-ESCAPE = 92     # '\\'
-OPEN = 123      # '{'
-CLOSE = 125     # '}'
-
-WHITESPACE = [SPACE, TAB, EOL, LF]
-CRLF = [EOL, LF]
-LINE_COMMENT = bytes([FWD_SLASH, FWD_SLASH])
-START_COMMENT_BLOCK = bytes([FWD_SLASH, ASTERISK])
-CLOSE_COMMENT_BLOCK = bytes([ASTERISK, FWD_SLASH])
 
 
 def load(file):
@@ -60,14 +41,14 @@ class FSysObj:
     """
     @property
     def buffer(self):
-        return self.__bytes
+        return self.__buffer
 
     def __init__(self, file):
         self.file = path.abspath(file)
-        self.__bytes = None
+        self.__buffer = None
 
-    def set_bytes(self, bytes):
-        self.__bytes = bytes
+    def set_bytes(self, buffer):
+        self.__buffer = buffer
 
 
 class Parser:
@@ -115,12 +96,12 @@ class Parser:
                 value = bytearray()
 
                 # reads the entirety of line
-                while buffer[idx] not in CRLF and buffer[idx] != CLOSE and idx < length:
+                while buffer[idx] not in CR_LF and buffer[idx] != CLOSE and idx < length:
                     # '"' will cause everything to read
                     if buffer[idx] == DBL_QUOTE:
                         idx += 1
 
-                        if buffer[idx] in CRLF:
+                        if buffer[idx] in CR_LF:
                             continue
 
                         while buffer[idx] != DBL_QUOTE:
@@ -155,94 +136,10 @@ class Parser:
                 continue
 
             idx = self.__ignore_comments(idx)
+            tag, idx = get_tag(buffer, idx)
 
-            # if we encounter '}' here assume container close and break loop
-            if buffer[idx] == CLOSE:
-                break
-
-            key = bytearray()
-            while idx < length and buffer[idx] != OPEN and buffer[idx] != TAG_DELIM:
-                if buffer[idx] in WHITESPACE:
-                    idx += 1
-                    continue
-
-                idx = self.__ignore_comments(idx)
-
-                if buffer[idx] == CLOSE:
-                    break
-
-                key.append(buffer[idx])
-                idx += 1
-
-            if len(key) > 0:
-                start = -1
-                raw_node = RawNode(key.decode())
-
-            if buffer[idx] == TAG_DELIM:
-                idx += 1
-
-                # skip any spaces
-                while buffer[idx] in WHITESPACE:
-                    idx += 1
-
-                start = idx
-                # read the node content
-                while buffer[idx] not in CRLF:
-                    # if quoted content:
-                    #   - skip escaped characters (\", \r, \n, \t, etc)
-                    #   - skip CRLF
-                    if buffer[idx] == DBL_QUOTE:
-                        idx += 1
-
-                        while buffer[idx] != DBL_QUOTE:
-                            # skip '\'
-                            if buffer[idx] == ESCAPE:
-                                idx += 1
-
-                            idx += 1
-
-                    idx += 1
-
-                # complete to line feed
-                while buffer[idx] in CRLF:
-                    idx += 1
-
-            if buffer[idx] == OPEN:
-                bal_oc = 1
-                idx += 1
-                start = idx
-                children = None
-
-                while bal_oc != 0 and idx < length:
-                    if buffer[idx] in WHITESPACE:
-                        idx += 1
-                        continue
-
-                    if buffer[idx] not in [OPEN, CLOSE]:
-                        # skip comments
-                        idx = self.__ignore_comments(idx)
-                        # read node content
-                        content_len = self.__length_to_balance(bal_oc, idx, OPEN, CLOSE)
-                        children = self.__scan(idx, content_len)
-
-                        idx += content_len - 1
-
-                    if buffer[idx] == OPEN:
-                        bal_oc += 1
-                    elif buffer[idx] == CLOSE:
-                        bal_oc -= 1
-
-                    idx += 1
-
-                if children is not None:
-                    for ch in children.__iter__():
-                        raw_node.append(ch)
-
-            raw_node.start = start
-            nodes.append(raw_node)
-
-            idx += 1
-
+            nodes.append((tag, None))
+            
         return nodes
 
     def __ignore_comments(self, idx):
@@ -253,12 +150,12 @@ class Parser:
             # check single-line
             if token == LINE_COMMENT:
                 idx += 2
-                while buffer[idx] not in CRLF:
+                while buffer[idx] not in CR_LF:
                     idx += 1
             # check multi-line
-            elif token == START_COMMENT_BLOCK:
+            elif token == START_BLOCK_COMMENT:
                 idx += 2
-                while token != CLOSE_COMMENT_BLOCK:
+                while token != CLOSE_BLOCK_COMMENT:
                     if buffer[idx] == ASTERISK:
                         token = bytes([buffer[idx], buffer[idx+1]])
                         idx += 2

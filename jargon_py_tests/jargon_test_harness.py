@@ -18,3 +18,35 @@ Parser = parser
 RawNode = raw_node
 
 root_path = "../samples"
+
+
+def parse_jargon_file(file):
+    file_map = FileMap(root_path)
+    file_map.load(file)
+    p = Parser()
+
+    return p, p.parse(file_map.fso)
+
+
+def get_key_nodes(collection, key):
+    results = filter(lambda k: k[0] == key, collection)
+
+    for k, n in results:
+        yield n
+
+
+def get_raw_nodes(collection, key):
+    results = filter(lambda r: r.name == key, collection)
+
+    for n in results:
+        yield n
+
+
+def first(iterator):
+    item = None
+
+    for i in iterator:
+        item = i
+        break
+
+    return item

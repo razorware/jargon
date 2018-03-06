@@ -12,3 +12,4 @@ HEXDIGIT:   DECDIGIT | A | B | C | D | E | F ;
 SYMBOL:     { | } | , | \; | \: | \" ;
 
 CHARACTER:  LETTER | DECDIGIT | _ | #32 | #10 ;
+

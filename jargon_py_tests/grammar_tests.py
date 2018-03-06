@@ -1,6 +1,6 @@
 import unittest
 
-from jargon_py import Grammar
+from jargon_py.lexer import Grammar
 
 
 class GrammarTests(unittest.TestCase):
