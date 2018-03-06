@@ -139,7 +139,7 @@ class Parser:
             tag, idx = get_tag(buffer, idx)
 
             nodes.append((tag, None))
-            
+
         return nodes
 
     def __ignore_comments(self, idx):

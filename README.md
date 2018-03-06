@@ -32,7 +32,7 @@ Window {
 }
 ```
 
-Jargon is more flexibility than JSON. For instance, in the example of above, there are only a couple of elements encapsulated with '"'. Also, there is no root symbol
+Jargon is more flexible than JSON. For instance, in the example of above, there are only a couple of elements encapsulated with '"'. Also, there is no root symbol
 required as in JSON. A JSON document must start with `{` and close with `}`. Jargon does not require anything. As a matter of fact, one could write the following:
 
 ```
