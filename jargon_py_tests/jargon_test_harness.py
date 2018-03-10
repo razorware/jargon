@@ -35,7 +35,7 @@ def get_key_nodes(collection, key):
         yield n
 
 
-def get_raw_nodes(collection, key):
+def get_nodes(collection, key):
     results = filter(lambda r: r.name == key, collection)
 
     for n in results:

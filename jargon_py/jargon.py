@@ -68,7 +68,9 @@ class Parser:
         with open(self.__fso.file, 'rb') as file:
             self.__fso.set_bytes(file.read())
 
-        return self.__scan()
+        nodes, idx = self.__scan()
+
+        return nodes
 
     def build_nodes(self, raw_nodes):
         """
@@ -131,68 +133,87 @@ class Parser:
         nodes = []
 
         while idx < length:
-            if buffer[idx] in WHITESPACE:
-                idx += 1
-                continue
-
-            idx = self.__ignore_comments(idx)
+            idx = ignore_whitespace(buffer, idx)
+            idx = ignore_comments(buffer, idx)
             tag, idx = get_tag(buffer, idx)
+            raw_node = RawNode(tag.decode())
 
             start = idx
             if buffer[idx] == OPEN_BLOCK:
                 idx += 1
+
+                children = None
+                bal_oc = 1
                 start = idx
+                # length of block from open to close (non-inclusive)
+                eidx = self.__block_end(bal_oc, idx)
 
-                while buffer[idx] != CLOSE_BLOCK:
-                    idx += 1
+                while idx < eidx:
+                    idx = ignore_whitespace(buffer, idx)
+                    idx = ignore_comments(buffer, idx)
 
-            nodes.append(RawNode(tag.decode(), start=start))
-
-            idx += 1
-
-        return nodes
-
-    def __ignore_comments(self, idx):
-        buffer = self.__fso.buffer
-
-        if buffer[idx] == FWD_SLASH:
-            token = bytes([buffer[idx], buffer[idx+1]])
-            # check single-line
-            if token == LINE_COMMENT:
-                idx += 2
-                while buffer[idx] not in CR_LF:
-                    idx += 1
-            # check multi-line
-            elif token == START_BLOCK_COMMENT:
-                idx += 2
-                while token != CLOSE_BLOCK_COMMENT:
-                    if buffer[idx] == ASTERISK:
-                        token = bytes([buffer[idx], buffer[idx+1]])
-                        idx += 2
-                    else:
+                    if buffer[idx] == OPEN_BLOCK:
+                        bal_oc += 1
                         idx += 1
 
-                while buffer[idx] in WHITESPACE:
+                        continue
+                    elif buffer[idx] == CLOSE_BLOCK:
+                        bal_oc -= 1
+                        idx += 1
+
+                        continue
+
+                    idx = ignore_whitespace(buffer, idx)
+
+                    if buffer[idx] not in [OPEN_BLOCK, CLOSE_BLOCK]:
+                        idx = ignore_comments(buffer, idx)
+                        idx = ignore_whitespace(buffer, idx)
+
+                        start = idx
+                        children, idx = self.__scan(idx, eidx-idx)
+
                     idx += 1
 
-        return idx
+                if children is not None:
+                    for ch in children.__iter__():
+                        raw_node.append(ch)
 
-    def __length_to_balance(self, bal_index, start, begin, end):
+            elif buffer[idx] == TAG_DELIM:
+                # skip ':'
+                idx += 1
+                while is_whitespace(buffer[idx]):
+                    idx += 1
+
+                start = idx
+                while buffer[idx] != LINE_TERM:
+                    idx += 1
+
+            raw_node.start = start
+            nodes.append(raw_node)
+
+            idx += 1
+            idx = ignore_whitespace(buffer, idx)
+            idx = ignore_comments(buffer, idx)
+
+        return nodes, idx
+
+    def __block_end(self, bal_index, start):
         buffer = self.__fso.buffer
         bal_be = bal_index
         idx = start
 
         while bal_be != 0 and idx < len(buffer):
-            idx = self.__ignore_comments(idx)
+            idx = ignore_comments(buffer, idx)
 
-            if buffer[idx] == begin:
+            if buffer[idx] == OPEN_BLOCK:
                 bal_be += 1
-            elif buffer[idx] == end:
+            elif buffer[idx] == CLOSE_BLOCK:
                 bal_be -= 1
 
             idx += 1
 
-        return idx - start
+        # position up to but not including end (closing) char
+        return idx - 1
 
     @staticmethod
     def __build_value(value):

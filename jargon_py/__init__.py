@@ -42,3 +42,37 @@ def get_tag(buffer, idx):
 
     # make tag immutable
     return bytes(tag), idx
+
+
+def ignore_whitespace(buffer, idx):
+    while idx < len(buffer) and is_whitespace(buffer[idx]):
+        idx += 1
+
+    return idx
+
+
+def ignore_comments(buffer, idx):
+    # consume whitespace
+    idx = ignore_whitespace(buffer, idx)
+
+    if idx < len(buffer) and buffer[idx] == FWD_SLASH:
+        token = bytes([buffer[idx], buffer[idx+1]])
+        # check single-line
+        if token == LINE_COMMENT:
+            idx += 2
+            while idx < len(buffer) and buffer[idx] not in CR_LF:
+                idx += 1
+        # check multi-line
+        elif token == START_BLOCK_COMMENT:
+            idx += 2
+            while token != CLOSE_BLOCK_COMMENT:
+                if idx < len(buffer)+1 and buffer[idx] == ASTERISK:
+                    token = bytes([buffer[idx], buffer[idx+1]])
+                    idx += 2
+                else:
+                    idx += 1
+
+            while buffer[idx] in WHITESPACE:
+                idx += 1
+
+    return idx

@@ -109,7 +109,7 @@ class ParserScanTests(unittest.TestCase):
         file_map.load("jargon_5.jss")
         nodes = Parser().parse(file_map.fso)
 
-        parent = nodes[0]
+        parent = first(get_nodes(nodes, 'Window'))
 
         self.assertEqual(1, len(parent.nodes))
 
@@ -135,7 +135,7 @@ class ParserScanTests(unittest.TestCase):
 
     def test_populated_multi_node(self):
         expected_names = ["target", "size"]
-        expected_starts = [19, 44]
+        expected_starts = [19, 45]
 
         file_map = FileMap(root_path)
         file_map.load("jargon_7.jss")
@@ -155,7 +155,7 @@ class ParserScanTests(unittest.TestCase):
         exp_names = ['target', 'title']
 
         p, raw_nodes = parse_jargon_file("jargon_8.jss")
-        window = first(get_raw_nodes(raw_nodes, 'Window'))
+        window = first(get_nodes(raw_nodes, 'Window'))
 
         self.assertTrue(2, len(window.nodes))
 
@@ -164,7 +164,6 @@ class ParserScanTests(unittest.TestCase):
             self.assertEqual(exp_names[i], n.name)
             self.assertIsNotNone(n.start)
             i += 1
-
 
 
 if __name__ == '__main__':
