@@ -75,4 +75,23 @@ Grocery_List {
 There are no end of line symbols. The parser is friendly to both `\r` and `\n`. Whitespaces are generally ignored except when formatting a keyed value.
 
 Formatting will have a lot of flexibility. I am purposefully intent on minimizing the variety of symbols. There are currently fewer symbols here than in JSON and presents a far
-cleaner markup for a data structure than XML. Look for an implementation of Jargon to be used in PyLE at some point in the future. 
+cleaner markup for a data structure than XML. Look for an implementation of Jargon to be used in PyLE at some point in the future.
+ 
+Jargon recognizes several formats for data:
+
+integers:  i:500
+floats:    f:29.75
+named tuple:
+
+```
+size:   w:500 h:500
+```
+
+results in a tuple identical to what the following Python creates:
+
+```Python
+size = namedtuple('size', 'w h')
+my_size = size(500, 500)
+```
+
+lists: 100, "text informationn", 1/1/2000
