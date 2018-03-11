@@ -72,9 +72,12 @@ class Parser:
 
         return nodes
 
-    def build_nodes(self, raw_nodes):
+    def build_nodes(self, raw_nodes, parent=None):
         """
         Iterate nodes and build child values
+
+        :param parent: parent node
+        :type parent: KeyNode
 
         :param raw_nodes:
         :type raw_nodes: list
@@ -86,10 +89,10 @@ class Parser:
 
         key_nodes = []
         for n in raw_nodes:
-            kn = KeyNode(n.name, n.parent)
+            kn = KeyNode(n.name, parent)
 
             if n.nodes:
-                children = self.build_nodes(n.nodes)
+                children = self.build_nodes(n.nodes, kn)
                 for ch in children:
                     kn.add_node(ch[1])
             else:
@@ -98,21 +101,18 @@ class Parser:
                 value = bytearray()
 
                 # reads the entirety of line
-                while buffer[idx] not in CR_LF and buffer[idx] != CLOSE_BLOCK and idx < length:
+                while not is_line_terminator(buffer[idx]) and buffer[idx] != CLOSE_BLOCK and idx < length:
                     # '"' will cause everything to read
                     if buffer[idx] == DBL_QUOTE:
-                        idx += 1
-
-                        if buffer[idx] in CR_LF:
+                        if is_line_terminator(buffer[idx]):
                             continue
 
-                        while buffer[idx] != DBL_QUOTE:
-                            # skip '\'
-                            if buffer[idx] == ESCAPE:
-                                idx += 1
+                        idx += 1
+                        value, idx = read_text(buffer, idx)
 
-                            value.append(buffer[idx])
-                            idx += 1
+                        # handle strings here
+                        kn.set_value(value.decode())
+                        value.clear()
 
                         continue
 
@@ -120,7 +120,7 @@ class Parser:
                     idx += 1
 
                 if len(value) > 0:
-                    kn.set_value(self.__build_value(value.decode()))
+                    kn.set_value(decode_value(value))
 
             key_nodes.append((kn.name, kn))
 
@@ -214,17 +214,3 @@ class Parser:
 
         # position up to but not including end (closing) char
         return idx - 1
-
-    @staticmethod
-    def __build_value(value):
-        """
-
-        :param value:
-        :type value: str
-
-        :return:
-        """
-        if value.startswith('"'):
-            pass
-
-        return value

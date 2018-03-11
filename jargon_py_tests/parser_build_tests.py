@@ -50,6 +50,8 @@ class ParserBuildTests(unittest.TestCase):
         window = first(get_key_nodes(nodes, 'Window'))
         memo = first(get_key_nodes(window.value, 'memo'))
 
+        self.assertEqual(len(exp_text), len(memo.value))
+
         i = 0
         while i < len(exp_text):
             self.assertEqual(exp_text[i],
@@ -57,6 +59,38 @@ class ParserBuildTests(unittest.TestCase):
                              i)
 
             i += 1
+
+    def test_build_with_packed_node_values(self):
+        from collections import namedtuple
+
+        SizeTuple = namedtuple('SizeTuple', 'w h')
+        exp_size_value = SizeTuple(500, 300)
+
+        p, raw_nodes = parse_jargon_file("jargon_10.jss")
+        nodes = p.build_nodes(raw_nodes)
+
+        window = first(get_key_nodes(nodes, 'Window'))
+        size = first(get_key_nodes(window.value, 'size'))
+
+    def test_tuple_builder(self):
+        from collections import namedtuple
+
+        name = "Foo"
+        attribs = "bar baz goo tar taz"
+        values = [100, "Hello", -1, "World", "1968"]
+
+        tpl_cls = namedtuple(name, attribs)
+
+        foo = tpl_cls(*values)
+
+        self.assertEqual(values[0], foo.bar)
+        self.assertEqual(values[1], foo.baz)
+        self.assertEqual(values[2], foo.goo)
+        self.assertEqual(values[3], foo.tar)
+        self.assertEqual(values[4], foo.taz)
+
+        print("\nWe always use '{baz}, {tar}' as an example.".format(baz=foo.baz, tar=foo.tar))
+
 
 if __name__ == '__main__':
     unittest.main()
