@@ -109,6 +109,7 @@ class Parser:
 
                         idx += 1
                         value, idx = read_text(buffer, idx)
+                        idx += 1
 
                         # handle strings here
                         kn.set_value(value.decode())

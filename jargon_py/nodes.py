@@ -1,4 +1,20 @@
 
+def get_nodes(collection, key):
+    results = filter(lambda r: r[0] == key, collection)
+
+    for k, n in results:
+        yield n
+
+
+def first(iterator):
+    item = None
+
+    for i in iterator:
+        item = i
+        break
+
+    return item
+
 
 class RawNode:
 
@@ -45,8 +61,22 @@ class KeyNode:
         self.__value.append((node.name, node))
 
     def set_value(self, value):
+        if isinstance(value, tuple):
+            from collections import namedtuple
+            attribs = value[0]
+            values = value[1]
+            val_cls = namedtuple(self.name, attribs)
+
+            value = val_cls(*values)
+
         if not self.__value:
             self.__value = value
+
+    def __getitem__(self, item):
+        results = get_nodes(self.__value, item)
+
+        for v in results:
+            yield v
 
     def __hash__(self):
         return self.__value.__hash__()

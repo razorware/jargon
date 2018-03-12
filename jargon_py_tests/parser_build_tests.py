@@ -1,6 +1,10 @@
 import unittest
 
+from collections import namedtuple
+
 from jargon_py_tests.jargon_test_harness import *
+
+Size = namedtuple("size", "w h")
 
 
 class ParserBuildTests(unittest.TestCase):
@@ -61,16 +65,54 @@ class ParserBuildTests(unittest.TestCase):
             i += 1
 
     def test_build_with_packed_node_values(self):
-        from collections import namedtuple
-
-        SizeTuple = namedtuple('SizeTuple', 'w h')
-        exp_size_value = SizeTuple(500, 300)
+        expected = Size(500, 300)
 
         p, raw_nodes = parse_jargon_file("jargon_10.jss")
         nodes = p.build_nodes(raw_nodes)
 
+        # example:
+        #   Window {
+        #     target: sample.Sample;
+        #     title:  "Memo: \"Lorem Ipsum\"";
+        #     size:   w:500 h:300;
+        #   }
         window = first(get_key_nodes(nodes, 'Window'))
+        target = first(get_key_nodes(window.value, 'target'))
+        title = first(get_key_nodes(window.value, 'title'))
         size = first(get_key_nodes(window.value, 'size'))
+
+        self.assertIsNotNone(target)
+        self.assertIsNotNone(title)
+        self.assertIsNotNone(size)
+        self.assertEqual(expected.w, size.value.w)
+        self.assertEqual(expected.h, size.value.h)
+
+    def test_functional(self):
+        p, raw_nodes = parse_jargon_file("jargon_11.jss")
+        nodes = p.build_nodes(raw_nodes)
+
+        # Window {
+        #   target: sample.Sample;
+        #   title:  "Sample 3: Basic Quick Start";
+        #   size:   w:500 h:300;
+        #   border: f:red b:black hf:red bd:0 th:1;
+        #
+        #   Grid {
+        #     Label {
+        #       text: "Hello, World!";
+        #     }
+        #   }
+        # }
+        window = first(get_key_nodes(nodes, 'Window'))
+        title = first(window['title'])
+
+        self.assertIsNotNone(title)
+
+        grid = first(window['Grid'])
+        label = first(grid['Label'])
+        text = first(label['text']).value
+
+        self.assertEqual("Hello, World!", text)
 
     def test_tuple_builder(self):
         from collections import namedtuple
