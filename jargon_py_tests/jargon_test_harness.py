@@ -11,13 +11,15 @@ from jargon_py.jargon import FileMap as fmap
 from jargon_py.jargon import FSysObj as fso
 from jargon_py.jargon import Parser as parser
 from jargon_py.nodes import RawNode as raw_node
+from jargon_py.nodes import KeyNode as key_node
 
 FileMap = fmap
 FSysObj = fso
 Parser = parser
 RawNode = raw_node
+KeyNode = key_node
 
-root_path = "../samples"
+root_path = "../../samples"
 
 
 def parse_jargon_file(file):

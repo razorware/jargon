@@ -1,9 +1,9 @@
 Window {
   target: sample.Sample
   title: "Sample 3: Basic Quick Start"
-  //  this creates a named value tuple
+  //  packed parameters creates a dictionary
   size: width:500 height:300
-  //  this creates a dictionary with 2 dictionary entries
+  //  attribute list creates a node collection
   startup {
     left: 50
     top: 125

@@ -2,6 +2,7 @@ from os import path
 
 from jargon_py import *
 from jargon_py.nodes import *
+from jargon_py.query import *
 
 
 def load(file):
@@ -87,14 +88,14 @@ class Parser:
         buffer = self.__fso.buffer
         length = len(buffer)
 
-        key_nodes = []
+        root = KeyNode('root', None)
         for n in raw_nodes:
             kn = KeyNode(n.name, parent)
 
             if n.nodes:
-                children = self.build_nodes(n.nodes, kn)
+                children = self.build_nodes(n.nodes, kn).nodes
                 for ch in children:
-                    kn.add_node(ch[1])
+                    kn.add_node(ch.node)
             else:
                 # no child nodes but value instead
                 idx = n.start
@@ -123,9 +124,10 @@ class Parser:
                 if len(value) > 0:
                     kn.set_value(decode_value(value))
 
-            key_nodes.append((kn.name, kn))
+            root.add_node(kn)
+            kn.parent = root
 
-        return key_nodes
+        return root
 
     def __scan(self, index=0, read_length=None):
         buffer = self.__fso.buffer
@@ -186,7 +188,7 @@ class Parser:
                     idx += 1
 
                 start = idx
-                while buffer[idx] != LINE_TERM:
+                while idx < length and buffer[idx] != LINE_TERM:
                     idx += 1
 
             raw_node.start = start

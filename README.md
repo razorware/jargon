@@ -33,7 +33,7 @@ Window {
 ```
 
 Jargon is more flexible than JSON. For instance, in the example of above, there are only a couple of elements encapsulated with '"'. Also, there is no root symbol
-required as in JSON. A JSON document must start with `{` and close with `}`. Jargon does not require anything. As a matter of fact, one could write the following:
+required as in JSON. A JSON document must start with `{` and close with `}`. Jargon does not require anything. The following is a valid jargon data structure:
 
 ```
 Person {
@@ -58,8 +58,9 @@ Address {
 }
 ```
 
-`Person` and `Address` are separate keys with their own child nodes. Only the streets needed double quotes due to the spaces in the values. If quotes had not encapsulated
-the values, then street would end up as a tuple of values: ex. (123, Main, St)
+`Person` and `Address` are separate keys with their own child nodes. Apply double quotes to values with spaces. If quotes had not encapsulated
+the (street, for example) values. Otherwise, `street: 123 Main St` result is problematic.  
+_NOTE: this behavior has not yet been determined and would most likely throw an exception._
 
 If a keyed value were expected to be a list, then the following format is required:
 
@@ -79,19 +80,30 @@ cleaner markup for a data structure than XML. Look for an implementation of Jarg
  
 Jargon recognizes several formats for data:
 
-integers:  i:500
-floats:    f:29.75
-named tuple:
-
+integers:       500
+floats:         29.75
+dictionary:
 ```
 size:   w:500 h:500
 ```
+results in: `{'w': 500, 'h': 500}`
 
-results in a tuple identical to what the following Python creates:
-
-```Python
-size = namedtuple('size', 'w h')
-my_size = size(500, 500)
+lists: 
 ```
+list:   100, "text information", 1/1/2000
+```
+results in: `[100, 'text information', '1/1/2000']`
 
-lists: 100, "text informationn", 1/1/2000
+In progress (_TODO's and other stuff_):
+* add handling of unique node value collections, see Ex: 1 
+* add validator (validation template)
+
+Ex: 1
+```
+data: People {
+    ...
+}
+data: Addresses {
+    ...
+}    
+```

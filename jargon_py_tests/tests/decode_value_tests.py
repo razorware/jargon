@@ -31,26 +31,24 @@ class DecodeValueTests(unittest.TestCase):
             self.assertEqual(expected[i], actual[i])
 
     def test_tuple_list(self):
-        expected = ("w h", [500, 300])
+        expected = {'w': 500, 'h': 300}
 
         value = bytearray(b'w:500 h: 300')
         actual = decode_value(value)
 
-        self.assertEqual(expected[0], actual[0])
-
-        for i in [0, 1]:
-            self.assertEqual(expected[1][i], actual[1][i])
+        for k, v in expected.items():
+            self.assertTrue(k in actual)
+            self.assertEqual(v, actual[k])
 
     def test_tuple_list_with_strings(self):
-        expected = ("title greeting date", ["Test This", "hello, \"Dave\"", "1/1/2000"])
+        expected = {'title': "Test This", 'greeting': "hello, \"Dave\"", 'date': "1/1/2000"}
 
         value = bytearray(b'title:"Test This" greeting:"hello, \\"Dave\\"" date:1/1/2000')
         actual = decode_value(value)
 
-        self.assertEqual(expected[0], actual[0])
-
-        for i in [0, 1]:
-            self.assertEqual(expected[1][i], actual[1][i])
+        for k, v in expected.items():
+            self.assertTrue(k in actual)
+            self.assertEqual(v, actual[k])
 
 
 if __name__ == '__main__':

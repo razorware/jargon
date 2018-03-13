@@ -11,34 +11,35 @@ class ParserBuildTests(unittest.TestCase):
 
     def test_build_empty_node(self):
         p, raw_nodes = parse_jargon_file("jargon_0.jss")
-        nodes = p.build_nodes(raw_nodes)
+        root = p.build_nodes(raw_nodes)
 
-        self.assertIsNotNone(nodes)
-        self.assertTrue(isinstance(nodes, list))
+        self.assertIsNotNone(root)
+        self.assertTrue(isinstance(root, KeyNode))
 
-        window = first(get_key_nodes(nodes, 'Window'))
+        window = first(root.nodes['Window'])
 
         self.assertIsNotNone(window)
-        self.assertTrue(window.value is None)
+        self.assertFalse(len(window.nodes))
 
     def test_build_with_key_node(self):
         p, raw_nodes = parse_jargon_file("jargon_6.jss")
-        nodes = p.build_nodes(raw_nodes)
+        root = p.build_nodes(raw_nodes)
 
-        window = first(get_key_nodes(nodes, 'Window'))
-        target = first(get_key_nodes(window.value, 'target'))
+        window = first(root.nodes['Window'])
+        target = first(window.nodes['target'])
 
+        self.assertTrue(len(target.nodes) == 0)
         self.assertEqual('sample.Sample', target.value)
 
     def test_build_node_with_escaped_string_value(self):
         p, raw_nodes = parse_jargon_file("jargon_8.jss")
-        nodes = p.build_nodes(raw_nodes)
+        root = p.build_nodes(raw_nodes)
 
-        window = first(get_key_nodes(nodes, 'Window'))
+        window = first(root.nodes['Window'])
 
-        self.assertEqual(2, len(window.value))
+        self.assertEqual(2, len(window.nodes))
 
-        title = first(get_key_nodes(window.value, 'title'))
+        title = first(window.nodes['title'])
 
         self.assertEqual("Memo: \"Lorem Ipsum\"", title.value)
 
@@ -49,10 +50,10 @@ class ParserBuildTests(unittest.TestCase):
                    "Etiam commodo mauris ut urna facucibus sagittis."
 
         p, raw_nodes = parse_jargon_file("jargon_9.jss")
-        nodes = p.build_nodes(raw_nodes)
+        root = p.build_nodes(raw_nodes)
 
-        window = first(get_key_nodes(nodes, 'Window'))
-        memo = first(get_key_nodes(window.value, 'memo'))
+        window = first(root.nodes['Window'])
+        memo = first(window.nodes['memo'])
 
         self.assertEqual(len(exp_text), len(memo.value))
 
@@ -68,7 +69,7 @@ class ParserBuildTests(unittest.TestCase):
         expected = Size(500, 300)
 
         p, raw_nodes = parse_jargon_file("jargon_10.jss")
-        nodes = p.build_nodes(raw_nodes)
+        root = p.build_nodes(raw_nodes)
 
         # example:
         #   Window {
@@ -76,20 +77,31 @@ class ParserBuildTests(unittest.TestCase):
         #     title:  "Memo: \"Lorem Ipsum\"";
         #     size:   w:500 h:300;
         #   }
-        window = first(get_key_nodes(nodes, 'Window'))
-        target = first(get_key_nodes(window.value, 'target'))
-        title = first(get_key_nodes(window.value, 'title'))
-        size = first(get_key_nodes(window.value, 'size'))
+        window = first(root.nodes['Window'])
+        target = first(window.nodes['target'])
+        title = first(window.nodes['title'])
+        size = first(window.nodes['size'])
 
         self.assertIsNotNone(target)
         self.assertIsNotNone(title)
         self.assertIsNotNone(size)
-        self.assertEqual(expected.w, size.value.w)
-        self.assertEqual(expected.h, size.value.h)
+        self.assertEqual(expected.w, size.value['w'])
+        self.assertEqual(expected.h, size.value['h'])
+
+    def test_node_not_exist(self):
+        p, raw_nodes = parse_jargon_file("jargon_10.jss")
+        root = p.build_nodes(raw_nodes)
+
+        foo = first(root.nodes['foo'])
+        window = first(root.nodes['Window'])
+
+        self.assertIsNone(foo)
+        self.assertIsNotNone(window)
+        self.assertTrue('Window' in [n.name for n in root.nodes])
 
     def test_functional(self):
         p, raw_nodes = parse_jargon_file("jargon_11.jss")
-        nodes = p.build_nodes(raw_nodes)
+        root = p.build_nodes(raw_nodes)
 
         # Window {
         #   target: sample.Sample;
@@ -103,35 +115,16 @@ class ParserBuildTests(unittest.TestCase):
         #     }
         #   }
         # }
-        window = first(get_key_nodes(nodes, 'Window'))
-        title = first(window['title'])
+        window = first(root.nodes['Window'])
+        title = first(window.nodes['title'])
 
         self.assertIsNotNone(title)
 
-        grid = first(window['Grid'])
-        label = first(grid['Label'])
-        text = first(label['text']).value
+        grid = first(window.nodes['Grid'])
+        label = first(grid.nodes['Label'])
+        text = first(label.nodes['text']).value
 
         self.assertEqual("Hello, World!", text)
-
-    def test_tuple_builder(self):
-        from collections import namedtuple
-
-        name = "Foo"
-        attribs = "bar baz goo tar taz"
-        values = [100, "Hello", -1, "World", "1968"]
-
-        tpl_cls = namedtuple(name, attribs)
-
-        foo = tpl_cls(*values)
-
-        self.assertEqual(values[0], foo.bar)
-        self.assertEqual(values[1], foo.baz)
-        self.assertEqual(values[2], foo.goo)
-        self.assertEqual(values[3], foo.tar)
-        self.assertEqual(values[4], foo.taz)
-
-        print("\nWe always use '{baz}, {tar}' as an example.".format(baz=foo.baz, tar=foo.tar))
 
 
 if __name__ == '__main__':

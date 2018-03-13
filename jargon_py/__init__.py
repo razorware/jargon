@@ -80,31 +80,57 @@ def ignore_comments(buffer, idx):
     return idx
 
 
-def isdigit(buffer):
+def iterate(tup_coll):
+    length = None
+    for l in tup_coll:
+        if not length:
+            length = len(l)
+            continue
+        if len(l) != length:
+            # invalid iteration - lengths not equal
+            raise IndexError("collection lengths not equal")
+
+    idx = 0
+    while idx < length:
+        tpl = []
+        for l in tup_coll:
+            tpl.append(l[idx])
+
+        yield tuple(tpl)
+
+        idx += 1
+
+
+def is_digit(buffer):
     digits = bytes(b'0123456789')
     idx = 0
     length = len(buffer)
-    is_digit = True
+    digit = True
     has_decimal = False
 
     if buffer.startswith(b'-'):
         idx += 1
 
-    while idx < length and is_digit:
-        is_digit = buffer[idx] in digits
-        if not is_digit and buffer[idx] != 46:       # '.'
+    while idx < length and digit:
+        digit = buffer[idx] in digits
+        if not digit and buffer[idx] != 46:       # '.'
             break
 
         if not has_decimal:
             if buffer[idx] == 46:
                 has_decimal = True
-                is_digit = is_digit or True
+                digit = digit or True
         elif has_decimal and buffer[idx] == 46:
-            is_digit = is_digit and False
+            digit = digit and False
 
         idx += 1
 
-    return is_digit
+    return digit
+
+
+def is_collection(candidate):
+    import collections
+    return not isinstance(candidate, str) and isinstance(candidate, collections.Sequence)
 
 
 def read_text(buffer, idx, escapes=True):
@@ -170,7 +196,7 @@ def decode_value(value):
         """
         Determines if there are any special results expected from the formatting of the value:
             bytearray(b'w:500 h:300') expects to return a tuple with 'w' and 'h' attributes and
-            values of 500 & 300 respective
+            nodes of 500 & 300 respective
         :param value:
         :type value: bytearray
 
@@ -190,7 +216,7 @@ def decode_value(value):
         if result and len(result):
             return result
 
-        if isdigit(value):
+        if is_digit(value):
             if len(value.split(b'.')) > 1:
                 result = float(value)
             elif int(value):
@@ -199,7 +225,7 @@ def decode_value(value):
         if result:
             return result
 
-        tags, values = ([], [])
+        tags, nodes = ([], [])
         while idx < length:
             idx = ignore_whitespace(value, idx)
 
@@ -215,7 +241,7 @@ def decode_value(value):
                         temp, idx = read_text(value, idx)
                         idx += 1
 
-                        values.append(temp.decode())
+                        nodes.append(temp.decode())
                         temp.clear()
 
                         continue
@@ -224,7 +250,7 @@ def decode_value(value):
                     idx += 1
 
                 if len(temp):
-                    values.append(decode_value(temp))
+                    nodes.append(decode_value(temp))
                     temp.clear()
 
                 idx += 1
@@ -233,8 +259,14 @@ def decode_value(value):
             temp.append(value[idx])
             idx += 1
 
-        if len(tags) and len(values):
-            return " ".join(tags), values
+        if len(tags) and len(nodes):
+            node_set = {}
+            i = 0
+            for k, v in iterate((tags, nodes)):
+                node_set.update({k: nodes[i]})
+                i += 1
+
+            return node_set
 
         if len(temp) > 0:
             return temp.decode()

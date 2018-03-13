@@ -1,19 +1,8 @@
+from collections import namedtuple
 
-def get_nodes(collection, key):
-    results = filter(lambda r: r[0] == key, collection)
+from jargon_py.query import *
 
-    for k, n in results:
-        yield n
-
-
-def first(iterator):
-    item = None
-
-    for i in iterator:
-        item = i
-        break
-
-    return item
+Node = namedtuple("Node", "name node")
 
 
 class RawNode:
@@ -49,37 +38,60 @@ class KeyNode:
     def value(self):
         return self.__value
 
+    @property
+    def nodes(self):
+        return self.__nodes
+
     def __init__(self, key, parent):
         self.parent = parent
         self.__name = key
         self.__value = None
+        self.__nodes = NodeCollection()
 
     def add_node(self, node):
-        if not self.__value:
-            self.__value = []
-
-        self.__value.append((node.name, node))
+        self.__nodes.add(node)
 
     def set_value(self, value):
-        if isinstance(value, tuple):
-            from collections import namedtuple
-            attribs = value[0]
-            values = value[1]
-            val_cls = namedtuple(self.name, attribs)
-
-            value = val_cls(*values)
-
-        if not self.__value:
-            self.__value = value
-
-    def __getitem__(self, item):
-        results = get_nodes(self.__value, item)
-
-        for v in results:
-            yield v
+        self.__value = value
 
     def __hash__(self):
         return self.__value.__hash__()
 
     def __str__(self):
         return '{name}'.format(name=self.__name)
+
+    def __iter__(self):
+        return self.__nodes.__iter__()
+
+    def __getitem__(self, item):
+        return self.__nodes[item]
+
+
+class NodeCollection:
+
+    def __init__(self):
+        self.__nodes = []
+
+    def add(self, node):
+        """
+        Add a KeyNode to Collection
+
+        :param node:    a key node object
+        :type node:     KeyNode
+
+        :return: void
+        """
+        self.__nodes.append(Node(node.name, node))
+
+    def __len__(self):
+        return len(self.__nodes)
+
+    def __iter__(self):
+        for n in self.__nodes:
+            yield n
+
+    def __getitem__(self, item):
+        results = get_nodes(self.__nodes, item)
+
+        for r in results:
+            yield r
