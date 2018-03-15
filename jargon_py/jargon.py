@@ -6,6 +6,14 @@ from jargon_py.query import *
 
 
 def load(file):
+    """
+    Load object tree jss file
+
+    :param file:
+    :type file: str
+
+    :return:
+    """
     fso = FSysObj(file)
     p = Parser()
     '''
@@ -15,6 +23,20 @@ def load(file):
     '''
     Second pass -- build key-node values
     '''
+    key_nodes = p.build_nodes(raw_nodes)
+
+    return key_nodes
+
+
+def load_bin(stream):
+    """
+    Load object tree from bytearray
+
+    :param stream:
+    :return:
+    """
+    p = Parser()
+    raw_nodes = p.parse(None, bin=stream)
     key_nodes = p.build_nodes(raw_nodes)
 
     return key_nodes
@@ -59,15 +81,22 @@ class Parser:
         """
         self.__fso = None
 
-    def parse(self, fso):
+    def parse(self, fso, **kwargs):
         """
+
         :param fso: FSysObj (File system object)
+        :param kwargs:
 
         :return:
         """
-        self.__fso = fso
-        with open(self.__fso.file, 'rb') as file:
-            self.__fso.set_bytes(file.read())
+        if not fso:
+            if 'bin' in kwargs:
+                self.__fso = FSysObj(None)
+                self.__fso.set_bytes(kwargs['bin'])
+        else:
+            self.__fso = fso
+            with open(self.__fso.file, 'rb') as file:
+                self.__fso.set_bytes(file.read())
 
         nodes, idx = self.__scan()
 
@@ -102,9 +131,18 @@ class Parser:
                 value = bytearray()
 
                 # reads the entirety of line
-                while not is_line_terminator(buffer[idx]) and buffer[idx] != CLOSE_BLOCK and idx < length:
-                    # '"' will cause everything to read
-                    if buffer[idx] == DBL_QUOTE:
+                while idx < length and not is_line_terminator(buffer[idx]) and buffer[idx] != CLOSE_BLOCK:
+                    # ':' signals read to line end ';'
+                    if buffer[idx] == TAG_DELIM:
+                        while buffer[idx] != LINE_TERM:
+                            value.append(buffer[idx])
+
+                            idx += 1
+
+                        continue
+
+                    # '"' signals read to closing '"'
+                    elif buffer[idx] == DBL_QUOTE:
                         if is_line_terminator(buffer[idx]):
                             continue
 
@@ -184,8 +222,7 @@ class Parser:
             elif buffer[idx] == TAG_DELIM:
                 # skip ':'
                 idx += 1
-                while is_whitespace(buffer[idx]):
-                    idx += 1
+                idx = ignore_whitespace(buffer, idx)
 
                 start = idx
                 while idx < length and buffer[idx] != LINE_TERM:
